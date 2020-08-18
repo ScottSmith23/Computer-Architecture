@@ -1,7 +1,7 @@
 """CPU functionality."""
 
 import sys
-
+from inspect import signature
 class CPU:
     """Main CPU class."""
 
@@ -10,6 +10,7 @@ class CPU:
         self.ram = [None] * 10
         self.reg = [None] * 10
         self.pc = 0
+        self.running = True
 
 
     def ram_read(self, pc):
@@ -75,21 +76,28 @@ class CPU:
     def prn(self, regval):
         print(self.reg[regval])
 
+    def HLT(self):
+        self.running = False
+
     def run(self):
-
         """Run the CPU."""
-        running = True
-        HLT = 0b00000001
-        LDI = 0b10000010
+
+        HLT = 1
+        LDI = 0b10000010 
         PRN = 0b01000111
-        op_size = 1
-        cmd = self.ram[self.pc]
-        while cmd != HLT:
-            # FETCH
+        op_a = self.ram[self.pc + 1]
+        op_b = self.ram[self.pc + 2]
 
-            # DECODE
-            if cmd == LDI:
-                # EXECUTE
-                self.ldi()
+        while self.running:
+            instruction = self.ram_read(self.pc)
 
-            self.pc += op_size
+            if instruction == HLT:
+                self.HLT()
+            elif instruction == LDI:
+                self.reg[op_a] = op_b
+                self.pc += 3
+            elif instruction == PRN:
+                self.prn(op_a)
+                self.pc += 2
+            else:
+                print('instruction error')
