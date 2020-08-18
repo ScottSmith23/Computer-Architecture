@@ -1,7 +1,6 @@
 """CPU functionality."""
 
 import sys
-from inspect import signature
 class CPU:
     """Main CPU class."""
 
