@@ -94,7 +94,7 @@ class CPU:
             if instruction == HLT:
                 self.HLT()
             elif instruction == LDI:
-                self.reg[op_a] = op_b
+                self.ldi(op_a,op_b)
                 self.pc += 3
             elif instruction == PRN:
                 self.prn(op_a)
