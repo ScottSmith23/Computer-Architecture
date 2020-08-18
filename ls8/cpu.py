@@ -7,7 +7,16 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [None] * 10
+        self.reg = [None] * 10
+        self.pc = 0
+
+
+    def ram_read(self, pc):
+        return self.ram[pc]
+
+    def ram_write(self,pc,val):
+        self.ram[pc] = val
 
     def load(self):
         """Load a program into memory."""
@@ -60,6 +69,27 @@ class CPU:
 
         print()
 
+    def ldi(self, regval, value):
+        self.reg[regval] = value
+
+    def prn(self, regval):
+        print(self.reg[regval])
+
     def run(self):
+
         """Run the CPU."""
-        pass
+        running = True
+        HLT = 0b00000001
+        LDI = 0b10000010
+        PRN = 0b01000111
+        op_size = 1
+        cmd = self.ram[self.pc]
+        while cmd != HLT:
+            # FETCH
+
+            # DECODE
+            if cmd == LDI:
+                # EXECUTE
+                self.ldi()
+
+            self.pc += op_size
