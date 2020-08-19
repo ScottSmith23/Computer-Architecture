@@ -41,7 +41,9 @@ class CPU:
 
     def load(self,filename):
     # TODO do some logic here
+
         try:
+            print("FILE",filename)
             address = 0
             with open(filename) as f:
                 for line in f:
@@ -60,7 +62,6 @@ class CPU:
                     # print(f"{x:08b}: {x:d}")
 
         except FileNotFoundError:
-            print(f"{sys.argv[0]}: {filename} not found")
             sys.exit(2)
 
 
