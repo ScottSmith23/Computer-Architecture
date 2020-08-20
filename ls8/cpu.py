@@ -10,6 +10,9 @@ class CPU:
         self.reg = [None] * 10
         self.pc = 0
         self.running = True
+        self.sp = 7
+        self.reg[self.sp] = 244
+
 
 
     def ram_read(self, pc):
@@ -101,15 +104,26 @@ class CPU:
 
     def ldi(self, regval, value):
         self.reg[regval] = value
+        self.pc += 3
 
     def prn(self, regval):
         print(self.reg[regval])
-
+        self.pc += 2
+        
     def hlt(self):
         self.running = False
 
     def mul(self,reg_a,reg_b):
         self.alu("MUL",reg_a,reg_b)
+
+    def push(self,reg_a):
+        self.sp -= 1
+        self.ram[self.sp] = self.reg[reg_a]
+        self.pc += 2
+    def pop(self,reg_a):
+        self.reg[reg_a] = self.ram[self.sp]
+        self.sp += 1
+        self.pc += 2
 
     def run(self):
         """Run the CPU."""
@@ -118,6 +132,8 @@ class CPU:
         LDI = 0b10000010 
         PRN = 0b01000111
         MUL = 0b10100010
+        PUSH = 0b01000101
+        POP = 0b01000110
 
 
         while self.running:
@@ -129,11 +145,19 @@ class CPU:
                 self.hlt()
             elif instruction == LDI:
                 self.ldi(op_a,op_b)
-                self.pc += 3
+                
             elif instruction == PRN:
                 self.prn(op_a)
-                self.pc += 2
+                
             elif instruction == MUL:
                 self.mul(op_a,op_b)
+
+            elif instruction == PUSH:
+                self.push(op_a)
+
+            elif instruction == POP:
+                self.pop(op_a)
+            
             else:
                 print('instruction error')
+                self.hlt()
