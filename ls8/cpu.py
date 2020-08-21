@@ -6,13 +6,13 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.ram = [None] * 256
-        self.reg = [None] * 10
+        self.ram = [0] * 256
+        self.reg = [0] * 8
         self.pc = 0
         self.running = True
         self.sp = 7
         self.reg[self.sp] = 244
-
+        
 
 
     def ram_read(self, pc):
@@ -77,8 +77,7 @@ class CPU:
             self.reg[reg_a] -= self.reg[reg_b] 
         elif op == "MUL":
             val = self.reg[reg_a] * self.reg[reg_b]
-            self.reg[reg_a] = val
-            self.pc += 3             
+            self.reg[reg_a] = val       
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -104,26 +103,46 @@ class CPU:
 
     def ldi(self, regval, value):
         self.reg[regval] = value
-        self.pc += 3
+        print("ldi")
 
     def prn(self, regval):
         print(self.reg[regval])
-        self.pc += 2
+        print("print")
         
     def hlt(self):
         self.running = False
+        print("halt")
 
     def mul(self,reg_a,reg_b):
         self.alu("MUL",reg_a,reg_b)
+        print("mul")
 
     def push(self,reg_a):
         self.sp -= 1
         self.ram[self.sp] = self.reg[reg_a]
-        self.pc += 2
+        print("push")
+
     def pop(self,reg_a):
         self.reg[reg_a] = self.ram[self.sp]
         self.sp += 1
-        self.pc += 2
+        print("pop")
+
+    def call(self, register_index):
+        print("call")
+        self.reg[7] -= 1
+         
+        next_address = self.pc
+        self.ram_write(self.reg[7], next_address)
+
+        self.pc = self.reg[register_index]
+
+    def ret(self):
+        print("return")
+        # Return from subroutine.
+        # Pop the value from the top of the stack and store it in the PC.
+        value_to_pop = self.ram[self.reg[7]]
+        self.pc = value_to_pop
+        self.reg[7] += 1
 
     def run(self):
         """Run the CPU."""
@@ -134,29 +153,36 @@ class CPU:
         MUL = 0b10100010
         PUSH = 0b01000101
         POP = 0b01000110
+        CALL = 0b01010000
+        RET = 0b00010001
+
+        operations = {
+            0b00000001: self.hlt,
+            0b10000010: self.ldi,
+            0b01000111: self.prn,
+            0b10100010: self.mul,
+            0b01000101: self.push,
+            0b01000110: self.pop,
+            0b01010000: self.call,
+            0b00010001: self.ret,
+        }
 
 
         while self.running:
             instruction = self.ram_read(self.pc)
             op_a = self.ram[self.pc + 1]
             op_b = self.ram[self.pc + 2]
-
-            if instruction == HLT:
-                self.hlt()
-            elif instruction == LDI:
-                self.ldi(op_a,op_b)
-                
-            elif instruction == PRN:
-                self.prn(op_a)
-                
-            elif instruction == MUL:
-                self.mul(op_a,op_b)
-
-            elif instruction == PUSH:
-                self.push(op_a)
-
-            elif instruction == POP:
-                self.pop(op_a)
+            print(bin(instruction))
+            num_of_args = instruction >> 6
+            # move down to next instruction
+            self.pc += 1 + num_of_args
+            
+            if num_of_args == 0:
+                operations[instruction]()
+            elif num_of_args == 1:
+                operations[instruction](op_a)
+            elif num_of_args == 2:
+                operations[instruction](op_a, op_b)   
             
             else:
                 print('instruction error')
