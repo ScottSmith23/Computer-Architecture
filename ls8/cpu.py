@@ -9,6 +9,7 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.fl = {"l":0,"e":0,"g":0}
         self.running = True
         self.sp = 7
         self.reg[self.sp] = 244
@@ -77,7 +78,45 @@ class CPU:
             self.reg[reg_a] -= self.reg[reg_b] 
         elif op == "MUL":
             val = self.reg[reg_a] * self.reg[reg_b]
-            self.reg[reg_a] = val       
+            self.reg[reg_a] = val   
+        elif op == "AND":
+            val = self.reg[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = val
+        elif op == "OR":
+            val = self.reg[reg_a] | self.reg[reg_b]
+            self.reg[reg_a] = val
+        elif op == "XOR":
+            val = self.reg[reg_a] ^ self.reg[reg_b]
+            self.reg[reg_a] = val
+        elif op == "NOT":
+            val = ~self.reg[reg_a]
+            self.reg[reg_a] = val
+        elif op == "SHL":
+            val = self.reg[reg_a] << self.reg[reg_b]
+            self.reg[reg_a] = val
+        elif op == "SHR":
+            val = self.reg[reg_a] >> self.reg[reg_b]
+            self.reg[reg_a] = val
+        elif op == "MOD":
+            self.reg[reg_a] %= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_a] < self.reg[reg_b]:
+                self.fl["l"] = 1
+                self.fl["e"] = 0
+                self.fl["g"] = 0
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl["l"] = 0
+                self.fl["e"] = 0
+                self.fl["g"] = 1
+            elif self.reg[reg_a] == self.reg[reg_b]:
+                self.fl["l"] = 0
+                self.fl["e"] = 1
+                self.fl["g"] = 0
+            else:
+                self.fl["l"] = 0
+                self.fl["e"] = 0
+                self.fl["g"] = 0
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -103,41 +142,60 @@ class CPU:
 
     def ldi(self, regval, value):
         self.reg[regval] = value
-        print("ldi")
+        # print("ldi")
 
     def prn(self, regval):
         print(self.reg[regval])
-        print("print")
+        # print("print")
         
     def hlt(self):
         self.running = False
-        print("halt")
+        # print("halt")
 
     def mul(self,reg_a,reg_b):
         self.alu("MUL",reg_a,reg_b)
-        print("mul")
+        # print("mul")
+
+    def add(self,reg_a,reg_b):
+        self.alu("ADD",reg_a,reg_b)
+
+    def comp(self,reg_a,reg_b):
+        self.alu("CMP",reg_a,reg_b)
 
     def push(self,reg_a):
         self.sp -= 1
         self.ram[self.sp] = self.reg[reg_a]
-        print("push")
+        # print("push")
 
     def pop(self,reg_a):
         self.reg[reg_a] = self.ram[self.sp]
         self.sp += 1
-        print("pop")
+        # print("pop")
 
-    def call(self, register_index):
-        print("call")
+    def jmp(self,reg_a):
+        self.pc = self.reg[reg_a]
+
+    def jeq(self,reg_a):
+        if self.fl["e"] == 1:
+            self.pc = self.reg[reg_a]
+
+    
+    def jne(self,reg_a):
+        if self.fl["e"] == 0:
+            self.pc = self.reg[reg_a]
+
+
+    def call(self, reg_a):
+        # print("call")
         self.reg[7] -= 1
          
         next_address = self.pc
         self.ram_write(self.reg[7], next_address)
 
-        self.pc = self.reg[register_index]
+        self.jmp(reg_a)
 
     def ret(self):
-        print("return")
+        # print("return")
         # Return from subroutine.
         # Pop the value from the top of the stack and store it in the PC.
         value_to_pop = self.ram[self.reg[7]]
@@ -147,24 +205,21 @@ class CPU:
     def run(self):
         """Run the CPU."""
 
-        HLT = 1
-        LDI = 0b10000010 
-        PRN = 0b01000111
-        MUL = 0b10100010
-        PUSH = 0b01000101
-        POP = 0b01000110
-        CALL = 0b01010000
-        RET = 0b00010001
-
         operations = {
             0b00000001: self.hlt,
             0b10000010: self.ldi,
             0b01000111: self.prn,
             0b10100010: self.mul,
+            0b10100000: self.add,
             0b01000101: self.push,
             0b01000110: self.pop,
             0b01010000: self.call,
             0b00010001: self.ret,
+            0b01010100: self.jmp,
+            0b10100111: self.comp,
+            0b01010110: self.jne,
+            0b01010101: self.jeq,
+
         }
 
 
@@ -172,16 +227,17 @@ class CPU:
             instruction = self.ram_read(self.pc)
             op_a = self.ram[self.pc + 1]
             op_b = self.ram[self.pc + 2]
-            print(bin(instruction))
-            num_of_args = instruction >> 6
+            print("instraction",bin(instruction))
+            arg_count = instruction >> 6
+            print("NUMARGS",bin(arg_count))
             # move down to next instruction
-            self.pc += 1 + num_of_args
+            self.pc += 1 + arg_count
             
-            if num_of_args == 0:
+            if arg_count == 0:
                 operations[instruction]()
-            elif num_of_args == 1:
+            elif arg_count == 1:
                 operations[instruction](op_a)
-            elif num_of_args == 2:
+            elif arg_count == 2:
                 operations[instruction](op_a, op_b)   
             
             else:
